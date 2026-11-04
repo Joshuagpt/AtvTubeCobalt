@@ -14,7 +14,10 @@
 
 #include "cobalt/web/csp_delegate.h"
 
+#include <algorithm>
+#include <cctype>
 #include <memory>
+#include <string>
 #include <utility>
 
 #include "base/bind.h"
@@ -25,18 +28,53 @@ namespace web {
 
 namespace {
 
-// Backend host that is allowed to be contacted via XHR / fetch / WebSocket
-// regardless of the page's Content-Security-Policy (connect-src).
-// Exact host match only: do NOT widen this to the whole "de5.net" suffix.
-const char kAllowedBackendHost[] = "tv.tubegpt.de5.net";
+// Backend base host: this host itself and ALL of its subdomains are allowed
+// to be contacted via XHR / fetch / WebSocket regardless of the page's
+// Content-Security-Policy (connect-src).
+// e.g. "tubegpt.de5.net", "tv.tubegpt.de5.net", "api.tubegpt.de5.net".
+// Do NOT widen this to the whole "de5.net" suffix, and do NOT switch to a
+// plain "ends_with" check (that would also match "eviltubegpt.de5.net").
+const char kAllowedBackendHost[] = "tubegpt.de5.net";
 
 // QR code image host used by deviceAuth (api.qrserver.com).
 const char kAllowedQrImageHost[] = "api.qrserver.com";
 
+std::string ToLowerAscii(const std::string& s) {
+  std::string out = s;
+  std::transform(out.begin(), out.end(), out.begin(),
+                 [](unsigned char c) {
+                   return static_cast<char>(std::tolower(c));
+                 });
+  return out;
+}
+
+// Returns true iff |host| is exactly |base| or a subdomain of |base|.
+// The '.' boundary check is what keeps look-alikes such as
+// "eviltubegpt.de5.net" from being accepted.
+bool IsHostOrSubdomainOf(const std::string& host, const std::string& base) {
+  std::string h = ToLowerAscii(host);
+  std::string b = ToLowerAscii(base);
+  // Trim a trailing dot from fully-qualified host names, e.g. "a.b.c.".
+  while (!h.empty() && h.back() == '.') h.pop_back();
+  while (!b.empty() && b.back() == '.') b.pop_back();
+
+  if (h.empty() || b.empty()) return false;
+
+  // The base host itself.
+  if (h == b) return true;
+
+  // A subdomain must look like "<something>." + b, where <something> is at
+  // least one character long.
+  if (h.size() <= b.size() + 1) return false;
+  const size_t dot_pos = h.size() - b.size() - 1;
+  return h[dot_pos] == '.' && h.compare(dot_pos + 1, b.size(), b) == 0;
+}
+
 bool IsAllowedBackendHost(const GURL& url) {
-  // GURL::host() is already canonicalized (lowercase).
+  // GURL::host() is already canonicalized (lowercase, no port, no trailing
+  // dot), but IsHostOrSubdomainOf is defensive about that anyway.
   return url.is_valid() && url.SchemeIs("https") &&
-         url.host() == kAllowedBackendHost;
+         IsHostOrSubdomainOf(url.host(), kAllowedBackendHost);
 }
 
 bool IsAllowedQrImageHost(const GURL& url) {
