@@ -76,7 +76,7 @@ android {
         }
     }
     defaultConfig {
-        applicationId "io.gh.Joshuagpt.hotpot.cobalt"
+        applicationId "io.gh.hotpot.atvtube.cobalt"
         minSdkVersion MIN_SUPPORTED_SDK_VERSION
         targetSdkVersion LATEST_SUPPORTED_SDK_VERSION
         compileSdkVersion LATEST_SUPPORTED_SDK_VERSION
