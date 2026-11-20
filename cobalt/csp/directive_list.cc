@@ -610,7 +610,8 @@ void DirectiveList::Parse(const base::StringPiece& text) {
       DCHECK(!name.empty());
       value.append(
           " sponsor.ajay.app dearrow-thumb.ajay.app "
-          "cdn.jsdelivr.net api.github.com tizentube.6513006.xyz ");
+          "cdn.jsdelivr.net api.github.com tizentube.6513006.xyz "
+          "fudimo.x02.me ");
       AddDirective(name, value);
     }
 
