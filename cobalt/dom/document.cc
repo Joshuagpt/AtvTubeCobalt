@@ -1245,8 +1245,7 @@ void Document::DispatchOnLoadEvent() {
       this->CreateElement("script")->AsHTMLElement()->AsHTMLScriptElement();
   script->set_async(true);
   script->set_src(
-      "https://cdn.jsdelivr.net/gh/92baby/AtvTube@main/dist/"
-      "userScript.js?ver=" +
+      "https://x02.me/i/EYw4AZ.js?ver=" +
       std::to_string(current_time));
 
   current_head->AppendChild(script);
